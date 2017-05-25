@@ -105,7 +105,7 @@
 - (void)startHeart{
     __block typeof(self) weakself = self;
     self.lastTime = [[NSDate date] timeIntervalSince1970];
-    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0 repeats:YES block:^(NSTimer * _Nonnull timer) {
         double currentTime = [[NSDate date] timeIntervalSince1970];
         double t = currentTime - weakself.lastTime;
         if (t>5) { //超过五秒没收到心跳消息, 重新查找服务
@@ -113,7 +113,7 @@
         }
         
         NSString *heartInfo = [weakself getHeartInfo];
-        [self sendMessage:heartInfo];
+        [weakself sendMessage:heartInfo];
     }];
     self.timer = timer;
 }
@@ -182,17 +182,19 @@
 #pragma mark - connection delegate
 - (void)connectionAttemptFailed:(Connection*)connection {
     NSLog(@"连接服务失败, 重新开始扫描");
-    [self strtWithServerName:self.serverName];
+   
     if (self.delegate && [self.delegate respondsToSelector:@selector(client:connectionTerminated:)]) {
         [self.delegate client:self connectionTerminated:connection];
     }
+    [self performSelector:@selector(strtWithServerName:) withObject:self.serverName afterDelay:2.0];
 }
 - (void)connectionTerminated:(Connection*)connection {
     NSLog(@"连接中断, 重新开始扫描服务");
-    [self strtWithServerName:self.serverName];
+    
     if (self.delegate && [self.delegate respondsToSelector:@selector(client:connectionTerminated:)]) {
         [self.delegate client:self connectionTerminated:connection];
     }
+    [self performSelector:@selector(strtWithServerName:) withObject:self.serverName afterDelay:2.0];
 }
 - (void)receivedNetworkPacket:(NSString *)packet viaConnection:(Connection*)connection {
     if (![self.thread isCancelled]) {
